@@ -53,7 +53,7 @@ class CPU:
                         continue
 
                     x = int(n, 2)
-                    print(f"{x:08b}: {x:d}")
+                    # print(f"{x:08b}: {x:d}")
 
                     self.ram[address] = x
                     address += 1
@@ -67,6 +67,17 @@ class CPU:
     
     def ram_write(self, MAR, MDR):
         self.ram[MAR] = MDR
+    def push(self, op_a):
+        reg_index = op_a
+        value = self.reg[reg_index]
+        self.reg[7] -= 1
+        self.ram[self.reg[7]] = value
+
+    def pop(self, op_a):
+        reg_index = op_a
+        value = self.ram[self.reg[7]]
+        self.reg[reg_index] = value
+        self.reg[7] += 1
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
@@ -132,12 +143,19 @@ class CPU:
             
             if cmd == PRN:
                 print(self.reg[op_a])
+            
+            elif cmd == PUSH:
+                self.push(op_a)
+            
+            elif cmd == POP:
+                self.pop(op_a)
      
             elif cmd == LDI:
                 self.reg[op_a] = op_b
         
             elif cmd == MUL:
                 self.alu('MUL', op_a, op_b)
+
             elif cmd == HLT:
                 self.halted = True
 
