@@ -35,6 +35,9 @@ class CPU:
         self.ram = [0]*256
         self.pc = 0
         self.halted = False
+        self.equal = 0
+        self.less = 0
+        self.greater = 0
 
     def load(self, filename):
         """Load a program into memory."""
@@ -53,7 +56,7 @@ class CPU:
                         continue
 
                     x = int(n, 2)
-                    print(f"{x:08b}: {x:d}")
+                    # print(f"{x:08b}: {x:d}")
 
                     self.ram[address] = x
                     address += 1
@@ -89,6 +92,31 @@ class CPU:
         self.pc = self.ram[self.reg[7]]
         self.reg[7] += 1
 
+    def cmp_ls(self, op_a, op_b):
+        self.equal = 0
+        self.less = 0
+        self.greater = 0
+        if self.reg[op_a] == self.reg[op_b]:
+            self.equal = 1
+        elif self.reg[op_a] > self.reg[op_b]:
+            self.greater = 1
+        elif self.reg[op_a] < self.reg[op_b]:
+            self.less = 1
+
+
+    def jmp(self, op_a):
+        self.pc = self.reg[op_a]
+        
+
+    def jne(self, op_a):
+        if self.equal == 0:
+            self.pc = self.reg[op_a]
+
+    def jeq(self, op_a):
+        if self.equal == 1:
+            self.pc = self.reg[op_a] 
+
+
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
@@ -101,19 +129,19 @@ class CPU:
         elif op == "DIV":
             self.reg[reg_a] //= self.reg[reg_b]
         elif op == "MOD":
-            pass
+            self.reg[reg_a] %= self.reg[reg_b]
         elif op == "OR":
-            pass
+            self.reg[reg_a] |= self.reg[reg_b]
         elif op == "XOR":
-            pass
+            self.reg[reg_a] ^= self.reg[reg_b]
         elif op == "NOT":
-            pass
+            self.reg[reg_a] = ~self.reg[reg_a]
         elif op == "SHR":
-            pass
+            self.reg[reg_a] >>= self.reg[reg_b]
         elif op == "SHL":
-            pass
+            self.reg[reg_a] <<= self.reg[reg_b]
         elif op == "AND":
-            pass
+            self.reg[reg_a] &= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -170,12 +198,59 @@ class CPU:
      
             elif cmd == LDI:
                 self.reg[op_a] = op_b
+            
+            elif cmd == CMP:
+                self.cmp_ls(op_a, op_b)
+            
+            elif cmd == JMP:
+                self.jmp(op_a)
+                cmd_len = 0
+
+            elif cmd == JNE:
+                self.jne(op_a)
+                if self.pc == self.reg[op_a]:
+                    cmd_len = 0
+                
+
+
+            elif cmd == JEQ:
+                self.jeq(op_a)
+                if self.pc == self.reg[op_a]:
+                    cmd_len = 0
+
 
             elif cmd == ADD:
                 self.alu('ADD', op_a, op_b)
+            
+            elif cmd == SUB:
+                self.alu('SUB', op_a, op_b)
+            
+            elif cmd == DIV:
+                self.alu('DIV', op_a, op_b)
         
             elif cmd == MUL:
                 self.alu('MUL', op_a, op_b)
+
+            elif cmd == MOD:
+                self.alu('ADD', op_a, op_b)
+
+            elif cmd == OR:
+                self.alu('OR', op_a, op_b)
+
+            elif cmd == XOR:
+                self.alu('XOR', op_a, op_b)
+
+            elif cmd == NOT:
+                self.alu('NOT', op_a, op_b)
+
+            elif cmd == SHR:
+                self.alu('SHR', op_a, op_b)
+
+            elif cmd == SHL:
+                self.alu('SHL', op_a, op_b)
+
+            elif cmd == AND:
+                self.alu('AND', op_a, op_b)
 
             elif cmd == HLT:
                 self.halted = True
