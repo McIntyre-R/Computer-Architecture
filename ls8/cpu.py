@@ -53,7 +53,7 @@ class CPU:
                         continue
 
                     x = int(n, 2)
-                    # print(f"{x:08b}: {x:d}")
+                    print(f"{x:08b}: {x:d}")
 
                     self.ram[address] = x
                     address += 1
@@ -67,6 +67,7 @@ class CPU:
     
     def ram_write(self, MAR, MDR):
         self.ram[MAR] = MDR
+
     def push(self, op_a):
         reg_index = op_a
         value = self.reg[reg_index]
@@ -77,6 +78,15 @@ class CPU:
         reg_index = op_a
         value = self.ram[self.reg[7]]
         self.reg[reg_index] = value
+        self.reg[7] += 1
+
+    def call(self,op_a):
+        self.reg[7] -= 1
+        self.ram[self.reg[7]] = self.pc + 2
+        self.pc = self.reg[op_a]
+
+    def ret(self):
+        self.pc = self.ram[self.reg[7]]
         self.reg[7] += 1
 
     def alu(self, op, reg_a, reg_b):
@@ -149,9 +159,20 @@ class CPU:
             
             elif cmd == POP:
                 self.pop(op_a)
+
+            elif cmd == CALL:
+                self.call(op_a)
+                cmd_len = 0
+            
+            elif cmd == RET:
+                self.ret()
+                cmd_len = 0
      
             elif cmd == LDI:
                 self.reg[op_a] = op_b
+
+            elif cmd == ADD:
+                self.alu('ADD', op_a, op_b)
         
             elif cmd == MUL:
                 self.alu('MUL', op_a, op_b)
