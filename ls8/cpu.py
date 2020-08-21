@@ -3,7 +3,28 @@
 import sys, os
 from pathlib import Path
 
-
+HLT = 0b00000001
+PRN = 0b01000111
+LDI = 0b10000010
+MUL = 0b10100010
+DIV = 0b10100011
+ADD = 0b10100000 
+SUB = 0b10100001 
+CALL = 0b01010000 
+RET = 0b00010001
+PUSH = 0b01000101 
+POP = 0b01000110 
+CMP = 0b10100111 
+JMP = 0b01010100 
+JEQ = 0b01010101 
+JNE = 0b01010110 
+AND = 0b10101000 
+OR = 0b10101010 
+XOR = 0b10101011 
+NOT = 0b01101001  
+SHL = 0b10101100 
+SHR = 0b10101101  
+MOD = 0b10100100 
 
 class CPU:
     """Main CPU class."""
@@ -13,34 +34,17 @@ class CPU:
         self.reg = [0]*10
         self.ram = [0]*256
         self.pc = 0
+        self.halted = False
 
-    def load(self):
+    def load(self, filename):
         """Load a program into memory."""
 
-        address = 0
-        # data_folder = Path("examples/")
-        # file_to_open = data_folder / "mult.ls8"
-        # For now, we've just hardcoded a program:
-        # program = open('examples/' + sys.argv[1])
-        # program = [
-        #     # From print8.ls8
-        #     0b10000010, # LDI R0,8
-        #     0b00000000,
-        #     0b00001000,
-        #     0b01000111, # PRN R0
-        #     0b00000000,
-        #     0b00000001, # HLT
-        # ]
 
-
-
-
-        if len(sys.argv) != 2:
-            print("usage: 02_fileio2.py filename")
 
         try:
-            # print()
-            with open('examples/' + sys.argv[1]) as f:
+            address = 0
+
+            with open('examples/' + filename) as f:
                 for line in f:
                     comment_split = line.split("#")
                     n = comment_split[0].strip()
@@ -54,9 +58,10 @@ class CPU:
                     self.ram[address] = x
                     address += 1
 
-        except:
-            print("can not find it!")
-            
+        except FileNotFoundError:
+            print(f"{sys.argv[0]}: {filename} not found!")
+            sys.exit(2)
+
     def ram_read(self, MAR):
         return self.ram[MAR]
     
@@ -70,7 +75,24 @@ class CPU:
             self.reg[reg_a] += self.reg[reg_b]
         elif op == "MUL":
             self.reg[reg_a] *= self.reg[reg_b]
-        #elif op == "SUB": etc
+        elif op == "SUB":
+            self.reg[reg_a] -= self.reg[reg_b]
+        elif op == "DIV":
+            self.reg[reg_a] //= self.reg[reg_b]
+        elif op == "MOD":
+            pass
+        elif op == "OR":
+            pass
+        elif op == "XOR":
+            pass
+        elif op == "NOT":
+            pass
+        elif op == "SHR":
+            pass
+        elif op == "SHL":
+            pass
+        elif op == "AND":
+            pass
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -101,26 +123,25 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        HLT = 0b00000001
-        PRN = 0b01000111
-        LDI = 0b10000010
-        MUL = 0b10100010
-        while self.pc < len(self.ram):
-            item = self.ram[self.pc]
+        while not self.halted:
+            # print(self.ram_read(self.pc))
+            cmd = self.ram[self.pc]
+            cmd_len = ((cmd >> 6) & 0b11) + 1
+            op_a = self.ram_read(self.pc + 1)
+            op_b = self.ram_read(self.pc + 2)
             
-            if item == PRN:
-                print(self.ram_read(self.ram[self.pc+1]))
-                self.pc+=1
-            elif item == LDI:
-                self.ram_write(self.ram[self.pc+1], self.ram[self.pc+2])
-                self.pc+=2
-            elif item == MUL:
-                self.alu('MUL', self.ram[self.pc+1], self.ram[self.pc+2])
-                self.pc+=2
-            elif item == HLT:
-                break
+            if cmd == PRN:
+                print(self.reg[op_a])
+     
+            elif cmd == LDI:
+                self.reg[op_a] = op_b
+        
+            elif cmd == MUL:
+                self.alu('MUL', op_a, op_b)
+            elif cmd == HLT:
+                self.halted = True
 
-            self.pc += 1
+            self.pc += cmd_len
 
 
         
